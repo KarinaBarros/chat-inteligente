@@ -1,0 +1,13 @@
+.container {
+    background-color: var(--chat-bg);
+    color: var(--chat-color);
+    width: min(414px, calc(100vw - 48px));
+    height: 896px;
+    max-height: calc(100dvh - 48px);
+    border-radius: 18px;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    overflow: hidden;
+    z-index: 999;
+}
