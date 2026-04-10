@@ -1,13 +1,12 @@
-import Exemplo from "./components/exemplo";
 import Chat from "./components/Chat";
+import { ChatProvider } from "./context/ChatContext";
 
 export default function Home() {
   return (
-    <main>
-      <h1>Meu Chat</h1>
-      <Exemplo />
-      <Chat />
-
+    <main>     
+      <ChatProvider>
+        <Chat />
+      </ChatProvider>
     </main>
   )
 }

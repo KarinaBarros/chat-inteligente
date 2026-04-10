@@ -1,0 +1,45 @@
+.container {
+    height: 48px;
+    border-radius: 7px;
+    background-color: #E1E1E1;
+    color: #A3A3A8;
+    display: flex;
+    align-items: center;
+    padding: 0 4.93px 0 13.96px;
+}
+
+.container svg{
+    cursor: pointer;
+}
+
+.container input {
+    border: none;
+    background-color: transparent;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 160%;
+    letter-spacing: 0.2px;
+    vertical-align: middle;
+    width: 100%;
+    border: 1px solid #E1E1E1;
+    border: none;
+}
+
+.container input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.fill{
+    fill: #676767;
+}
+
+@media (prefers-color-scheme: dark) {
+    .container {
+        background-color: #232627;
+        border: 1px solid #676767;
+    }
+    .fill{
+        fill: #fff;
+    }
+}
