@@ -1,4 +1,4 @@
-name: CI
+name: CI Tests
 
 on:
   push:
@@ -8,18 +8,14 @@ on:
 
 jobs:
   test:
+    name: Run Tests
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Instalar dependências
-        run: npm install
-
-      - name: Rodar testes
-        run: npm run test:run
+      - run: npm install
+      - run: npm run test:run
