@@ -25,8 +25,8 @@ export default function Instructions() {
             </div>
             <div className={styles.instructions}>
                 {question.map((q, index) => (
-                    <div className={styles.question} onClick={() => {setMessage(q); nextStep(); window.scrollTo({top: 0, behavior: "smooth",});}}>
-                        <p key={index}>{q}</p>
+                    <div key={index} className={styles.question} onClick={() => {setMessage(q); nextStep(); window.scrollTo({top: 0, behavior: "smooth",});}}>
+                        <p>{q}</p>
                     </div>
                 ))}
             </div>

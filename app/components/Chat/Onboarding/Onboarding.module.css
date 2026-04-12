@@ -107,7 +107,6 @@
 }
 
 .text {
-    width: 337.95px;
     margin: 16.32px auto 0;
     text-align: center;
 }
@@ -158,5 +157,34 @@
 @media (prefers-color-scheme: dark) {
     .navigator {
         background: #232627;
+    }
+}
+
+
+@media (max-width: 480px) {
+    .containerDesfoque {
+        height: 340px;
+    }
+
+    .containerImage {
+        width: calc(100% - 40px);
+        margin: 0 20px;
+        height: 320px;
+    }
+
+    .desfoque {
+        width: calc(100% - 30px);
+        height: 300px;
+        left: 15px;
+    }
+
+    .text h1 {
+        font-size: 26px;
+        line-height: 36px;
+    }
+
+    .text p {
+        font-size: 14px;
+        line-height: 22px;
     }
 }
