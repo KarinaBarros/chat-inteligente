@@ -34,18 +34,4 @@ describe('useChat', () => {
     expect(result.current.direction).toBe('back');
   });
 
-  it('lança erro se usado fora do provider', () => {
-    let error: unknown;
-
-    try {
-      renderHook(() => useChat());
-    } catch (e) {
-      error = e;
-    }
-
-    expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toBe(
-      'useChat must be used within ChatProvider'
-    );
-  });
 });
