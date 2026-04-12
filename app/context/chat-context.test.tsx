@@ -9,7 +9,7 @@ describe('useChat', () => {
   it('começa correto', () => {
     const { result } = renderHook(() => useChat(), { wrapper });
 
-    expect(result.current.step).toBe(999);
+    expect(result.current.step).toBe(1);
     expect(result.current.direction).toBe('next');
   });
 
