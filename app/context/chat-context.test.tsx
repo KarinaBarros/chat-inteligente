@@ -6,6 +6,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
   <ChatProvider>{children}</ChatProvider>
 );
 
+
 describe('useChat', () => {
   it('começa no step 1 com direction next', () => {
     const { result } = renderHook(() => useChat(), { wrapper });
@@ -34,8 +35,13 @@ describe('useChat', () => {
   });
 
   it('lança erro se usado fora do provider', () => {
-    expect(() => renderHook(() => useChat())).toThrow(
+  try {
+    renderHook(() => useChat());
+    throw new Error('Deveria ter lançado erro');
+  } catch (e) {
+    expect((e as Error).message).toBe(
       'useChat must be used within ChatProvider'
     );
-  });
+  }
+});
 });
