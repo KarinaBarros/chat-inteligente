@@ -1,51 +1,64 @@
-import { renderHook, act } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import { ChatProvider, useChat } from './ChatContext';
-import { ReactNode } from 'react';
 
-const wrapper = ({ children }: { children: ReactNode }) => (
-  <ChatProvider>{children}</ChatProvider>
-);
+function setup() {
+  let hook: ReturnType<typeof useChat>;
+
+  const TestComponent = () => {
+    hook = useChat();
+    return null;
+  };
+
+  render(
+    <ChatProvider>
+      <TestComponent />
+    </ChatProvider>
+  );
+
+  // @ts-ignore
+  return hook!;
+}
 
 describe('useChat', () => {
   it('começa no step 1 com direction next', () => {
-    const { result } = renderHook(() => useChat(), { wrapper });
+    const hook = setup();
 
-    expect(result.current.step).toBe(1);
-    expect(result.current.direction).toBe('next');
+    expect(hook.step).toBe(1);
+    expect(hook.direction).toBe('next');
   });
 
-  it('nextStep incrementa step e seta direction next', async () => {
-    const { result } = renderHook(() => useChat(), { wrapper });
+  it('nextStep incrementa step e seta direction next', () => {
+    const hook = setup();
 
-    await act(async () => {
-      result.current.nextStep();
+    act(() => {
+      hook.nextStep();
     });
 
-    expect(result.current.step).toBe(2);
-    expect(result.current.direction).toBe('next');
+    expect(hook.step).toBe(2);
+    expect(hook.direction).toBe('next');
   });
 
-  it('prevStep não vai abaixo de 1', async () => {
-    const { result } = renderHook(() => useChat(), { wrapper });
+  it('prevStep não vai abaixo de 1', () => {
+    const hook = setup();
 
-    await act(async () => {
-      result.current.prevStep();
+    act(() => {
+      hook.prevStep();
     });
 
-    expect(result.current.step).toBe(1);
+    expect(hook.step).toBe(1);
   });
 
-  it('prevStep seta direction back', async () => {
-    const { result } = renderHook(() => useChat(), { wrapper });
+  it('prevStep seta direction back', () => {
+    const hook = setup();
 
-    await act(async () => {
-      result.current.nextStep();
+    act(() => {
+      hook.nextStep();
     });
 
-    await act(async () => {
-      result.current.prevStep();
+    act(() => {
+      hook.prevStep();
     });
 
-    expect(result.current.direction).toBe('back');
+    expect(hook.direction).toBe('back');
   });
 });
