@@ -35,13 +35,17 @@ describe('useChat', () => {
   });
 
   it('lança erro se usado fora do provider', () => {
-  try {
-    renderHook(() => useChat());
-    throw new Error('Deveria ter lançado erro');
-  } catch (e) {
-    expect((e as Error).message).toBe(
+    let error: unknown;
+
+    try {
+      renderHook(() => useChat());
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe(
       'useChat must be used within ChatProvider'
     );
-  }
-});
+  });
 });
