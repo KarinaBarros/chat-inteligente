@@ -1,64 +1,38 @@
-import { render, act } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { ChatProvider, useChat } from './ChatContext';
 
-function setup() {
-  let hook: ReturnType<typeof useChat>;
-
-  const TestComponent = () => {
-    hook = useChat();
-    return null;
-  };
-
-  render(
-    <ChatProvider>
-      <TestComponent />
-    </ChatProvider>
-  );
-
-  // @ts-ignore
-  return hook!;
-}
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <ChatProvider>{children}</ChatProvider>
+);
 
 describe('useChat', () => {
-  it('começa no step 1 com direction next', () => {
-    const hook = setup();
+  it('começa correto', () => {
+    const { result } = renderHook(() => useChat(), { wrapper });
 
-    expect(hook.step).toBe(1);
-    expect(hook.direction).toBe('next');
+    expect(result.current.step).toBe(1);
+    expect(result.current.direction).toBe('next');
   });
 
-  it('nextStep incrementa step e seta direction next', () => {
-    const hook = setup();
+  it('nextStep funciona', () => {
+    const { result } = renderHook(() => useChat(), { wrapper });
 
     act(() => {
-      hook.nextStep();
+      result.current.nextStep();
     });
 
-    expect(hook.step).toBe(2);
-    expect(hook.direction).toBe('next');
+    expect(result.current.step).toBe(2);
+    expect(result.current.direction).toBe('next');
   });
 
-  it('prevStep não vai abaixo de 1', () => {
-    const hook = setup();
+  it('prevStep funciona', () => {
+    const { result } = renderHook(() => useChat(), { wrapper });
 
     act(() => {
-      hook.prevStep();
+      result.current.nextStep();
+      result.current.prevStep();
     });
 
-    expect(hook.step).toBe(1);
-  });
-
-  it('prevStep seta direction back', () => {
-    const hook = setup();
-
-    act(() => {
-      hook.nextStep();
-    });
-
-    act(() => {
-      hook.prevStep();
-    });
-
-    expect(hook.direction).toBe('back');
+    expect(result.current.direction).toBe('back');
+    expect(result.current.step).toBe(1);
   });
 });
