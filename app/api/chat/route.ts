@@ -6,39 +6,79 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_CHAVE!,
 });
 
+async function gerarRespostaComRetry(fn: () => Promise<any>, tentativas = 3) {
+    let erro;
+
+    for (let i = 0; i < tentativas; i++) {
+        try {
+            return await fn();
+        } catch (e: any) {
+            erro = e;
+
+            const isErroRetry =
+                e.message?.includes("429") ||
+                e.message?.includes("503") ||
+                e.message?.includes("UNAVAILABLE");
+
+            if (!isErroRetry) {
+                throw e;
+            }
+
+            const delay = 500 * Math.pow(2, i);
+            console.warn(`Tentativa ${i + 1} falhou. Tentando novamente em ${delay}ms...`);
+
+            await new Promise(res => setTimeout(res, delay));
+        }
+    }
+
+    throw erro;
+}
+
 export async function POST(requisicao: NextRequest) {
     try {
         const { mensagens } = await requisicao.json();
 
         if (!mensagens || mensagens.length === 0) {
-            return Response.json({ erro: "Nenhuma mensagem enviada." }, { status: 400 });
+            return Response.json(
+                { erro: "Nenhuma mensagem enviada." },
+                { status: 400 }
+            );
         }
 
         const perguntaDoUsuario = mensagens[mensagens.length - 1].texto;
 
-        const resultado = await ai.models.generateContent({
-            model: "gemini-2.5-flash", 
-            contents: [{ role: "user", parts: [{ text: perguntaDoUsuario }] }],
-            config: {
-                systemInstruction: `
-                    Você é um assistente virtual da empresa e deve responder APENAS 
-                    com base nos dados abaixo.
+        const resultado = await gerarRespostaComRetry(() =>
+            ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: [
+                    {
+                        role: "user",
+                        parts: [{ text: perguntaDoUsuario }]
+                    }
+                ],
+                config: {
+                    systemInstruction: `
+                        Você é um assistente virtual da empresa e deve responder APENAS 
+                        com base nos dados abaixo.
 
-                    Regras:
-                    - Responda sempre em português
-                    - Seja educado e objetivo
-                    - Se a pergunta não estiver relacionada aos dados da empresa, 
-                    diga: "Desculpe, só posso responder dúvidas relacionadas à nossa empresa."
-                    - Nunca invente informações que não estejam nos dados abaixo
+                        Regras:
+                        - Responda sempre em português
+                        - Seja educado e objetivo
+                        - Se a pergunta não estiver relacionada aos dados da empresa, 
+                        diga: "Desculpe, só posso responder dúvidas relacionadas à nossa empresa."
+                        - Nunca invente informações que não estejam nos dados abaixo
 
-                    Dados da empresa:
-                    ${documento}
-                `,
-                temperature: 0.3,
-            }
-        });
+                        Dados da empresa:
+                        ${documento}
+                    `,
+                    temperature: 0.3,
+                }
+            })
+        );
 
-        const resposta = resultado.text || "Desculpe, não consegui processar sua resposta.";
+        const resposta =
+            resultado.text || "Desculpe, não consegui processar sua resposta.";
+
         return Response.json({ resposta });
 
     } catch (erro: any) {
@@ -48,6 +88,13 @@ export async function POST(requisicao: NextRequest) {
             return Response.json(
                 { erro: "Limite de cota atingido. Aguarde alguns segundos." },
                 { status: 429 }
+            );
+        }
+
+        if (erro.message?.includes("503") || erro.message?.includes("UNAVAILABLE")) {
+            return Response.json(
+                { erro: "Servidor da IA está ocupado. Tente novamente em instantes." },
+                { status: 503 }
             );
         }
 
