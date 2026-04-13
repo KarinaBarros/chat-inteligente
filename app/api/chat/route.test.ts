@@ -1,15 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-const mockGenerateContent = vi.hoisted(() => vi.fn());
-
-vi.mock('@google/genai', () => {
-    class GoogleGenAI {
-        models = { generateContent: mockGenerateContent };
-        constructor(_config: any) {}
-    }
-    return { GoogleGenAI };
-});
+const mockFetch = vi.hoisted(() => vi.fn());
+vi.stubGlobal('fetch', mockFetch);
 
 vi.mock('@/app/data/documento', () => ({
     documento: 'dados da empresa mockados',
@@ -22,6 +15,22 @@ function criarRequisicao(body: object) {
         method: 'POST',
         body: JSON.stringify(body),
         headers: { 'Content-Type': 'application/json' },
+    });
+}
+
+function mockGroqSucesso(conteudo: string) {
+    mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+            choices: [{ message: { content: conteudo } }],
+        }),
+    });
+}
+
+function mockGroqErro(status: number, mensagem: string) {
+    mockFetch.mockResolvedValue({
+        ok: false,
+        json: async () => ({ error: { message: mensagem, code: status } }),
     });
 }
 
@@ -48,7 +57,7 @@ describe('POST /api/chat', () => {
     });
 
     it('retorna resposta da IA quando sucesso', async () => {
-        mockGenerateContent.mockResolvedValue({ text: 'Olá! Como posso ajudar?' });
+        mockGroqSucesso('Olá! Como posso ajudar?');
         const req = criarRequisicao({
             mensagens: [{ autor: 'usuario', texto: 'Qual o horário de atendimento?' }],
         });
@@ -58,8 +67,8 @@ describe('POST /api/chat', () => {
         expect(dados.resposta).toBe('Olá! Como posso ajudar?');
     });
 
-    it('retorna fallback quando resultado.text é vazio', async () => {
-        mockGenerateContent.mockResolvedValue({ text: '' });
+    it('retorna fallback quando conteúdo da resposta é vazio', async () => {
+        mockGroqSucesso('');
         const req = criarRequisicao({
             mensagens: [{ autor: 'usuario', texto: 'Olá' }],
         });
@@ -69,7 +78,7 @@ describe('POST /api/chat', () => {
     });
 
     it('retorna erro 429 quando cota é atingida', async () => {
-        mockGenerateContent.mockRejectedValue(new Error('429 quota exceeded'));
+        mockFetch.mockRejectedValue(new Error('429 quota exceeded'));
         const req = criarRequisicao({
             mensagens: [{ autor: 'usuario', texto: 'Olá' }],
         });
@@ -80,7 +89,7 @@ describe('POST /api/chat', () => {
     });
 
     it('retorna erro 500 para erros genéricos', async () => {
-        mockGenerateContent.mockRejectedValue(new Error('Erro desconhecido'));
+        mockFetch.mockRejectedValue(new Error('Erro desconhecido'));
         const req = criarRequisicao({
             mensagens: [{ autor: 'usuario', texto: 'Olá' }],
         });
@@ -91,7 +100,7 @@ describe('POST /api/chat', () => {
     });
 
     it('envia apenas a última mensagem para a IA', async () => {
-        mockGenerateContent.mockResolvedValue({ text: 'Resposta' });
+        mockGroqSucesso('Resposta');
         const req = criarRequisicao({
             mensagens: [
                 { autor: 'usuario', texto: 'primeira' },
@@ -100,10 +109,33 @@ describe('POST /api/chat', () => {
             ],
         });
         await POST(req);
-        expect(mockGenerateContent).toHaveBeenCalledWith(
-            expect.objectContaining({
-                contents: [{ role: 'user', parts: [{ text: 'última pergunta' }] }],
-            })
-        );
+
+        const bodyEnviado = JSON.parse(mockFetch.mock.calls[0][1].body);
+        const mensagemUsuario = bodyEnviado.messages.find((m: any) => m.role === 'user');
+        expect(mensagemUsuario.content).toBe('última pergunta');
+    });
+
+    it('chama a API do Groq com o modelo correto', async () => {
+        mockGroqSucesso('ok');
+        const req = criarRequisicao({
+            mensagens: [{ autor: 'usuario', texto: 'teste' }],
+        });
+        await POST(req);
+
+        const bodyEnviado = JSON.parse(mockFetch.mock.calls[0][1].body);
+        expect(bodyEnviado.model).toBe('llama-3.3-70b-versatile');
+        expect(bodyEnviado.temperature).toBe(0.3);
+    });
+
+    it('inclui system prompt com dados da empresa', async () => {
+        mockGroqSucesso('ok');
+        const req = criarRequisicao({
+            mensagens: [{ autor: 'usuario', texto: 'teste' }],
+        });
+        await POST(req);
+
+        const bodyEnviado = JSON.parse(mockFetch.mock.calls[0][1].body);
+        const systemMsg = bodyEnviado.messages.find((m: any) => m.role === 'system');
+        expect(systemMsg.content).toContain('dados da empresa mockados');
     });
 });

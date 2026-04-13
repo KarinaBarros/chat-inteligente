@@ -1,4 +1,12 @@
 .container {
+    background-color: var(--chat-bg);
+    color: var(--chat-color);
+    width: min(414px, calc(100vw - 48px));
+    border-radius: 18px;   
+    overflow: hidden;
+}
+
+.containerOnboarding {
     margin-bottom: 32px;
     display: flex;
     flex-direction: column;
