@@ -17,21 +17,23 @@ export default function Instructions() {
 
     return (
         <div className={styles.container}>
-            <div className={styles.containerTopbar}>
-                <TopBar />
-                <div className={styles.brain}>
-                    BrainBox
-                </div>
-            </div>
-            <div className={styles.instructions}>
-                {question.map((q, index) => (
-                    <div key={index} className={styles.question} onClick={() => {setMessage(q); nextStep(); window.scrollTo({top: 0, behavior: "smooth",});}}>
-                        <p>{q}</p>
+            <div className={styles.containerInstructions}>
+                <div className={styles.containerTopbar}>
+                    <TopBar />
+                    <div className={styles.brain}>
+                        BrainBox
                     </div>
-                ))}
-            </div>
-            <div className={styles.containerMessage}>
-                <Message />
+                </div>
+                <div className={styles.instructions}>
+                    {question.map((q, index) => (
+                        <div key={index} className={styles.question} onClick={() => { setMessage(q); nextStep(); window.scrollTo({ top: 0, behavior: "smooth", }); }}>
+                            <p>{q}</p>
+                        </div>
+                    ))}
+                </div>
+                <div className={styles.containerMessage}>
+                    <Message />
+                </div>
             </div>
         </div>
 

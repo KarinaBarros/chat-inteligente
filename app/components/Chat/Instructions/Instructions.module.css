@@ -1,4 +1,12 @@
-.container{
+.container {
+    background-color: var(--chat-bg);
+    color: var(--chat-color);
+    width: min(414px, calc(100vw - 48px));
+    border-radius: 18px;   
+    overflow: hidden;
+}
+
+.containerInstructions {
     padding: 45px 0 30px 0;
     width: min(414px, calc(100vw - 48px));
 }

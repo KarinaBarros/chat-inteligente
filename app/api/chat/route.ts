@@ -1,10 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
 import { NextRequest } from "next/server";
 import { documento } from "@/app/data/documento";
-
-const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_CHAVE!,
-});
 
 async function gerarRespostaComRetry(fn: () => Promise<any>, tentativas = 3) {
     let erro;
@@ -47,37 +42,53 @@ export async function POST(requisicao: NextRequest) {
 
         const perguntaDoUsuario = mensagens[mensagens.length - 1].texto;
 
-        const resultado = await gerarRespostaComRetry(() =>
-            ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: [
-                    {
-                        role: "user",
-                        parts: [{ text: perguntaDoUsuario }]
-                    }
-                ],
-                config: {
-                    systemInstruction: `
-                        Você é um assistente virtual da empresa e deve responder APENAS 
-                        com base nos dados abaixo.
-
-                        Regras:
-                        - Responda sempre em português
-                        - Seja educado e objetivo
-                        - Se a pergunta não estiver relacionada aos dados da empresa, 
-                        diga: "Desculpe, só posso responder dúvidas relacionadas à nossa empresa."
-                        - Nunca invente informações que não estejam nos dados abaixo
-
-                        Dados da empresa:
-                        ${documento}
-                    `,
+        const resultado = await gerarRespostaComRetry(async () => {
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${process.env.GROQ_CHAVE}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "llama-3.3-70b-versatile",
                     temperature: 0.3,
-                }
-            })
-        );
+                    messages: [
+                        {
+                            role: "system",
+                            content: `
+                                Você é um assistente virtual da empresa e deve responder APENAS 
+                                com base nos dados abaixo.
+
+                                Regras:
+                                - Responda sempre em português
+                                - Seja educado e objetivo
+                                - Se a pergunta não estiver relacionada aos dados da empresa, 
+                                diga: "Desculpe, só posso responder dúvidas relacionadas à nossa empresa."
+                                - Nunca invente informações que não estejam nos dados abaixo
+
+                                Dados da empresa:
+                                ${documento}
+                            `,
+                        },
+                        {
+                            role: "user",
+                            content: perguntaDoUsuario,
+                        },
+                    ],
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(JSON.stringify(errorData));
+            }
+
+            return response.json();
+        });
 
         const resposta =
-            resultado.text || "Desculpe, não consegui processar sua resposta.";
+            resultado.choices?.[0]?.message?.content ||
+            "Desculpe, não consegui processar sua resposta.";
 
         return Response.json({ resposta });
 
